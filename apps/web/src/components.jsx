@@ -43,6 +43,16 @@ export function Shell({ user, children }) {
     mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname, current?.label, area]);
   const [leaving, setLeaving] = useState(false);
+  const accountRef = useRef(null);
+  useEffect(() => {
+    const menu = accountRef.current;
+    const closeOutside = event => { if (menu?.open && !menu.contains(event.target)) menu.open = false; };
+    const closeOnEscape = event => { if (event.key === 'Escape' && menu?.open) { menu.open = false; menu.querySelector('summary')?.focus(); } };
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => { document.removeEventListener('pointerdown', closeOutside); document.removeEventListener('keydown', closeOnEscape); };
+  }, []);
+  useEffect(() => { if (accountRef.current) accountRef.current.open = false; }, [location.pathname]);
 
   async function onLogout() {
     setLeaving(true);
@@ -67,7 +77,7 @@ export function Shell({ user, children }) {
           </div>
           <div className="account-tools">
             <span className="workspace-semester"><CalendarDays size={17}/> Semestre atual</span>
-            <details className="account-menu">
+            <details ref={accountRef} className="account-menu">
               <summary aria-label="Minha conta"><span className="avatar" aria-hidden="true">{(user.nome || user.username || 'U').slice(0,1).toUpperCase()}</span><span className="account-name"><strong>{user.nome || user.username}</strong><span>{area}</span></span><ChevronRight size={15}/></summary>
               <div className="account-popover"><strong>{user.nome || user.username}</strong><p>{user.username} · {area}</p><button type="button" className="btn btn-ghost logout-button" onClick={onLogout} disabled={leaving}><LogOut size={18}/> {leaving ? 'Saindo…' : 'Sair da conta'}</button></div>
             </details>
