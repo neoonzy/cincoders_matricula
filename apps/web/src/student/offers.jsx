@@ -24,11 +24,31 @@ function useSearchList() {
 export function Offers() {
     const { query, page, search, setSearch, goPage } = useSearchList(), qc = useQueryClient(), notify = useNotify();
     const data = useQuery({ queryKey: ['ofertas', query, page], queryFn: ({ signal }) => api(`/aluno/ofertas?${new URLSearchParams({ q: query, page: String(page), limit: '8' })}`, { signal }) });
+    const [view, setView] = useState(() => localStorage.getItem('trama-offer-view') === 'list' ? 'list' : 'grid');
+    const setLayout = next => { setView(next); localStorage.setItem('trama-offer-view', next); };
+    const currentEnrollments = useQuery({ queryKey: ['matriculas'], queryFn: () => api('/aluno/matriculas') });
     const currentPlan = useQuery({ queryKey: ['plano'], queryFn: () => api('/aluno/plano') });
     const plannedSubjects = new Set(currentPlan.data?.itens.map(x => x.disciplina.id) ?? []);
     useEffect(() => { const actual = data.data?.pagination?.page; if (actual && actual !== page)
         goPage(actual); }, [data.data?.pagination?.page, page, goPage]);
     const enroll = useMutation({ mutationFn: turmaId => api('/aluno/matriculas', { method: 'POST', body: { turmaId } }), onSuccess: () => { notify('Matrícula realizada. A vaga já está registrada para você.'); invalidateStudent(qc); }, onError: e => { notify(e.message, 'error'); invalidateStudent(qc); } });
     const plan = useMutation({ mutationFn: turmaId => api('/aluno/plano/itens', { method: 'POST', body: { turmaId } }), onSuccess: () => { notify('Turma adicionada ao planejamento. Nenhuma vaga foi reservada.'); qc.invalidateQueries({ queryKey: ['plano'] }); }, onError: e => notify(e.message, 'error') });
-    return <><PageTitle eyebrow="GRADUAÇÃO / SEMESTRE CORRENTE" title="Ofertas de disciplinas" description="Consulte turmas, vagas e pré-requisitos para realizar suas matrículas." actions={<Link to="/aluno/planejamento" className="btn btn-outline"><Layers3 size={17}/> Meu planejamento <ArrowRight size={16}/></Link>}/><div className="stats-banner"><div className="banner-icon"><BookOpenText size={22}/></div><div><strong>Planejamento não é matrícula</strong><span>Adicionar ao plano é uma simulação — você só ocupa vaga quando confirmar uma matrícula.</span></div><Link className="banner-link" to="/aluno/planejamento">Ver planejamento <ArrowRight size={16}/></Link></div><div className="content-toolbar"><div><h2>Turmas ofertadas</h2><p>Filtre o catálogo pelo nome ou código da disciplina.</p></div><SearchField value={search} onChange={setSearch} placeholder="Buscar disciplina ou código"/></div><QueryState loading={data.isLoading} error={data.error} retry={() => data.refetch()} empty={data.data && !data.data.items.length ? { title: query ? 'Nenhuma oferta encontrada' : 'Nenhuma turma aberta', description: query ? 'Tente outro termo de busca.' : 'As turmas aparecerão quando forem abertas pela secretaria.' } : null}><div className="offer-list">{data.data?.items.map(item => <SectionCard key={item.id} item={item} busy={enroll.isPending || plan.isPending} onEnroll={enroll.mutate} onPlan={plan.mutate} alreadyPlanned={plannedSubjects.has(item.disciplina.id)}/>)}</div><Pagination pagination={data.data?.pagination} onChange={goPage}/></QueryState></>;
+    return <>
+      <PageTitle title="Ofertas de disciplinas" description="Encontre e escolha as turmas do seu semestre."/>
+      <div className="semester-overview">
+        <Link className="overview-card" to="/aluno/matriculas"><span className="overview-icon"><BookOpenText size={23}/></span><div><span>Matrículas ativas</span><strong>{currentEnrollments.data?.length ?? '—'}</strong></div><ArrowRight size={20}/></Link>
+        <Link className="overview-card" to="/aluno/planejamento"><span className="overview-icon overview-yellow"><Layers3 size={23}/></span><div><span>Turmas no planejamento</span><strong>{currentPlan.data?.itens?.length ?? '—'}</strong></div><ArrowRight size={20}/></Link>
+      </div>
+      <section className="catalog" aria-label="Catálogo de ofertas">
+        <div className="catalog-header">
+          <div className="catalog-title"><h2>Turmas ofertadas</h2><span>{data.data ? `${data.data.pagination.total} resultados` : 'Consulte o catálogo'}</span></div>
+          <div className="catalog-controls"><SearchField value={search} onChange={setSearch} placeholder="Buscar disciplinas"/><div className="view-switch" role="group" aria-label="Visualização das ofertas"><button type="button" aria-pressed={view === 'grid'} title="Grade" onClick={() => setLayout('grid')}><span className="layout-grid-icon" aria-hidden="true"/><span className="sr-only">Grade</span></button><button type="button" aria-pressed={view === 'list'} title="Lista" onClick={() => setLayout('list')}><span className="layout-list-icon" aria-hidden="true"/><span className="sr-only">Lista</span></button></div></div>
+        </div>
+        <p className="catalog-hint">Adicionar ao plano não reserva uma vaga. Matricule-se para confirmar sua escolha.</p>
+        <QueryState loading={data.isLoading} error={data.error} retry={() => data.refetch()} empty={data.data && !data.data.items.length ? { title: query ? 'Nenhuma oferta encontrada' : 'Nenhuma turma aberta', description: query ? 'Tente outro termo de busca.' : 'As turmas aparecerão quando forem abertas pela secretaria.' } : null}>
+          <div className={`offer-list view-${view}`}>{data.data?.items.map(item => <SectionCard key={item.id} item={item} busy={enroll.isPending || plan.isPending} onEnroll={enroll.mutate} onPlan={plan.mutate} alreadyPlanned={plannedSubjects.has(item.disciplina.id)}/>)}</div>
+          <Pagination pagination={data.data?.pagination} onChange={goPage}/>
+        </QueryState>
+      </section>
+    </>;
 }

@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { GraduationCap, BookOpenText, ClipboardList, TrendingUp, Layers3, UsersRound, School, LogOut, Menu, X, ArrowRight, ChevronLeft, ChevronRight, Search, RefreshCw, AlertCircle, CheckCircle2, Info, CalendarDays } from './icons';
 import { api } from './api';
-import { CinBrand, IdentityPattern } from './brand';
+import { CinBrand } from './brand';
 const ToastContext = createContext(() => { });
 export function ToastProvider({ children }) {
     const [toast, setToast] = useState(null);
@@ -55,42 +55,41 @@ export function Shell({ user, children }) {
         <div className="institution-header-inner">
           <div className="institution-lockup">
             <CinBrand />
-            <div className="institution-product"><strong>Trama</strong><span>Sistema de matrícula</span></div>
+            <div className="institution-product"><strong>Trama</strong><span>Matrículas</span></div>
           </div>
           <div className="account-tools">
-            <div className="account-name"><strong>{user.nome}</strong><span>{area}</span></div>
-            <span className="avatar" aria-hidden="true">{user.nome?.slice(0, 1).toUpperCase()}</span>
-            <button type="button" className="btn btn-outline logout-button" aria-label="Sair da conta" title="Sair da conta" onClick={onLogout} disabled={leaving}><LogOut size={19}/><span>Sair</span></button>
+            <span className="workspace-semester"><CalendarDays size={18}/> Semestre atual</span>
+            <div className="account-name"><strong>{user.nome || user.username}</strong><span>{area}</span></div>
+            <span className="avatar" aria-hidden="true">{(user.nome || user.username || 'U').slice(0,1).toUpperCase()}</span>
+            <button type="button" className="btn btn-ghost logout-button" aria-label="Sair da conta" title="Sair da conta" onClick={onLogout} disabled={leaving}><LogOut size={20}/><span>Sair</span></button>
           </div>
         </div>
       </header>
       <div className="area-bar">
         <div className="area-bar-inner">
-          <div className="area-label"><span className="persona-dot" />{area}</div>
+          <div className="area-label"><span className="persona-dot"/>{area}</div>
           <nav className="institution-nav" aria-label="Navegação principal">
             {nav.map(({ path, label, mobile, icon: Icon }) => (
               <NavLink key={path} end to={path} className={({ isActive }) => `nav-link ${isActive ? 'nav-active' : ''}`}>
-                <Icon size={20} />
+                <span className="nav-icon"><Icon size={22}/></span>
                 <span className="nav-desktop-label">{label}</span>
                 <span className="nav-mobile-label">{mobile || label}</span>
               </NavLink>
             ))}
           </nav>
-          <div className="semester-label"><CalendarDays size={17} /> Semestre corrente</div>
+          <div className="workspace-note"><span className="workspace-note-mark"><ShieldMark /></span><div><strong>Ambiente de demonstração</strong><p>Dados acadêmicos fictícios.</p></div></div>
         </div>
       </div>
       <main className="page-content" id="conteudo" tabIndex={-1}>
-        <div className="page-inner">
-          <div className="context-line"><span>{area}</span><ArrowRight size={16}/><span>{current?.label || 'Visão geral'}</span></div>
-          {children}
-        </div>
+        <div className="page-inner">{children}</div>
+        <footer className="institution-footer"><span>Centro de Informática · UFPE</span><span>Trama · Projeto demonstrativo</span></footer>
       </main>
-      <footer className="institution-footer"><span>CIn / UFPE · Trama</span><span>Demonstração acadêmica · 2026</span></footer>
     </div>
   );
 }
+function ShieldMark() { return <Info size={20}/>; }
 export function PageTitle({ eyebrow, title, description, actions }) {
-  return <div className="page-heading"><div className="page-heading-copy"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1>{description && <p className="page-description">{description}</p>}</div><div className="page-heading-side"><IdentityPattern persona={undefined} className="heading-pattern" />{actions && <div className="page-actions">{actions}</div>}</div></div>;
+  return <div className="page-heading"><div className="page-heading-copy"><h1>{title}</h1>{description && <p className="page-description">{description}</p>}</div>{actions && <div className="page-actions">{actions}</div>}</div>;
 }
 export function Badge({ kind, children }) { const style = kind === 'OBRIGATORIA' ? 'badge-blue' : kind === 'PERFIL' ? 'badge-violet' : kind === 'LIVRE' ? 'badge-sand' : kind === 'good' ? 'badge-green' : kind === 'bad' ? 'badge-red' : 'badge-neutral'; return <span className={'badge ' + style}>{children}</span>; }
 export const categoryName = kind => ({ OBRIGATORIA: 'Obrigatória', PERFIL: 'Eletiva de perfil', LIVRE: 'Eletiva livre' })[kind] || kind;
