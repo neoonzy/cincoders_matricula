@@ -34,4 +34,6 @@ Data: **22 de novembro de 2026**.
 
 - Commit `099ac7d61aa3cbb96ce38fd016603c3d7c49aa32`: **CI aprovado** (`npm test` 16/16; `npm run test:integration` 16/16; `npm run build` sucesso), execução `45096194462`.
 - O lockfile npm foi gerado a partir da instalação real em outro job do mesmo workflow, coletado como artefato e incorporado para habilitar `npm ci`.
-- Teste E2E de navegador permanece pendente até execução específica.
+- O teste E2E em Chromium foi executado e aprovado com PostgreSQL real no GitHub Actions, execução `45096902829`: aluno em 360px (login, ofertas, planejamento, matrícula, cancelamento e progresso) e secretaria em 1280px (navegação e abertura do formulário de turma). As três capturas de tela estão no artefato `screenshots-smoke`. Não substitui auditoria WCAG completa.
+
+- Revisão final da auditoria: commit `425191c4b804ded5412836efd40762aefa147490`, **16/16 testes de domínio/paginação, 16/16 integração com PostgreSQL, `npm run build` e smoke E2E Playwright aprovados**, [execução do CI](https://github.com/neoonzy/cincoders_matricula/actions/runs/45096902829). Repositório GitHub não substitui GitLab do CIn.

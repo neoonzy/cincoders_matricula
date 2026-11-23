@@ -4,7 +4,7 @@ Teste prático nº 5/2026 · Bolsa de Inovação Tecnológica em Engenharia de S
 
 Aplicação web acadêmica com dois perfis: **aluno** (ofertas, matrícula, cancelamento, progresso e planejamento) e **secretaria** (disciplinas, professores, turmas e capacidade). O projeto preserva as **13 regras obrigatórias do edital** e especifica dois adicionais voluntários: **pré-requisitos** e **planejamento de matrícula com projeção curricular**.
 
-> **Estado de verificação neste pacote:** código-fonte de API e interface implementados, testes unitários e de paginação executados com sucesso (16/16), sintaxe de `.mjs` e parsing de `.jsx` verificados. Integração com PostgreSQL e build Vite foram aprovados no GitHub Actions com PostgreSQL 16; o smoke de navegador ainda não foi executado. Localmente, a rede npm e o servidor PostgreSQL continuam indisponíveis. Não interpretar o código como entrega validada de ponta a ponta antes dos passos de verificação abaixo.
+> **Estado de verificação neste pacote:** código-fonte de API e interface implementados, testes unitários e de paginação executados com sucesso (16/16), sintaxe de `.mjs` e parsing de `.jsx` verificados. Integração com PostgreSQL e build Vite foram aprovados no GitHub Actions com PostgreSQL 16; o smoke automatizado de navegador foi aprovado em 360px (aluno) e 1280px (secretaria). Localmente, a rede npm e o servidor PostgreSQL continuam indisponíveis. A verificação E2E cobriu as jornadas descritas em `scripts/smoke_browser.py`, mas não substitui uma auditoria completa de acessibilidade, segurança e desempenho.
 
 ## Requisitos locais
 
@@ -156,7 +156,7 @@ Códigos: `400` estrutura inválida; `401` sessão inválida; `403` sem permiss�
 
 Consultar `docs/05-DECISOES-E-IMPLEMENTACAO.md` e `docs/06-DESIGN-SYSTEM.md`. Os quatro arquivos originais de planejamento foram preservados.
 
-**Com mais tempo**: suíte E2E automatizada integrada ao CI, contrato compartilhado tipado, acessibilidade auditada por ferramentas automatizadas e usuários, suporte transacional a múltiplas condições de matrícula, atualização segura do snapshot histórico de CH, revogação de sessão no servidor, migrações incrementais versionadas, observabilidade e testes de carga. Não há integração com SIGAA, outros semestres, horários ou lista de espera.
+**Com mais tempo**: contrato compartilhado tipado, auditoria completa de acessibilidade com ferramentas automatizadas e usuários, suporte transacional a múltiplas condições de matrícula, atualização segura do snapshot histórico de CH, revogação de sessão no servidor, migrações incrementais versionadas, observabilidade e testes de carga. Não há integração com SIGAA, outros semestres, horários ou lista de espera.
 
 ## Correções após auditoria de 22/11/2026
 
@@ -168,10 +168,10 @@ Consultar `docs/05-DECISOES-E-IMPLEMENTACAO.md` e `docs/06-DESIGN-SYSTEM.md`. Os
 - Os testes de integração agora cobrem também redução de capacidade **abaixo de 2 matrículas ativas**, unicidade de e-mail e autorização.
 - Foi adicionado workflow de verificação no GitHub, além do `.gitlab-ci.yml` exigido para o GitLab do CIn.
 
-**Verificação em runner remoto:** o lockfile foi gerado com npm 10 no GitHub Actions e passou a ser versionado. O GitLab e o GitHub CI usam `npm ci`; os testes com PostgreSQL e o build React passaram no runner remoto. A verificação visual E2E exige ainda execução própria no navegador.
+**Verificação em runner remoto:** o lockfile foi gerado com npm 10 no GitHub Actions e passou a ser versionado. O GitLab e o GitHub CI usam `npm ci`; os testes com PostgreSQL e o build React passaram no runner remoto. O smoke E2E com Chromium e PostgreSQL real passou no GitHub Actions ([execução 45096902829](https://github.com/neoonzy/cincoders_matricula/actions/runs/45096902829)), cobrindo ofertas, planejamento, matrícula, cancelamento e progresso a 360px, além das turmas da secretaria a 1280px; as capturas estão disponíveis no artefato `screenshots-smoke` do workflow.
 
 ## Entrega do processo seletivo
 
-O edital pede monorepo em **repositório pessoal no GitLab do CIn**, compartilhado com **`selecaogersist`** antes do prazo, além de commits distribuídos. Este pacote contém **código-fonte local**; o histórico de commits também é fornecido em um Git bundle separado, mas **não foi publicado no GitLab**. É preciso criar o repositório pessoal, enviar o histórico e conferir o compartilhamento/acesso. Não substitua o repositório da seleção por uma URL do GitHub.
+O edital pede monorepo em **repositório pessoal no GitLab do CIn**, compartilhado com **`selecaogersist`** antes do prazo, além de commits distribuídos. O código e histórico estão no [GitHub `neoonzy/cincoders_matricula`](https://github.com/neoonzy/cincoders_matricula), mas **não foram publicados no GitLab do CIn**. É preciso criar o repositório pessoal do GitLab, enviar os commits e conferir o compartilhamento/acesso. Não substitua o repositório da seleção por uma URL do GitHub.
 
 > Este sistema é demonstrativo. A identidade gráfica "Trama" e os dados fictícios não são serviços oficiais da UFPE. Não reutilizar credenciais do seed em produção.
