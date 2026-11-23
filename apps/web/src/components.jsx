@@ -9,7 +9,7 @@ export function ToastProvider({ children }) {
     const [toast, setToast] = useState(null);
     const notify = (message, type = 'success') => setToast({ message, type, id: Date.now() });
     useEffect(() => { if (!toast)
-        return; const t = setTimeout(() => setToast(null), 5500); return () => clearTimeout(t); }, [toast]);
+        return; const t = toast.type === "error" ? null : setTimeout(() => setToast(null), 6500); return () => clearTimeout(t); }, [toast]);
     return <ToastContext.Provider value={notify}>{children}{toast && <div className={'toast ' + (toast.type === 'error' ? 'toast-error' : '')} role={toast.type === 'error' ? 'alert' : 'status'}><span>{toast.type === 'error' ? <AlertCircle size={19}/> : <CheckCircle2 size={19}/>}</span><p>{toast.message}</p><button aria-label="Fechar notificação" onClick={() => setToast(null)}><X size={16}/></button></div>}</ToastContext.Provider>;
 }
 export const useNotify = () => useContext(ToastContext);
@@ -66,10 +66,11 @@ export function Shell({ user, children }) {
             <div className="institution-product"><strong>Matrícula</strong><span>Portal acadêmico</span></div>
           </div>
           <div className="account-tools">
-            <span className="workspace-semester"><CalendarDays size={18}/> Semestre atual</span>
-            <div className="account-name"><strong>{user.nome || user.username}</strong><span>{area}</span></div>
-            <span className="avatar" aria-hidden="true">{(user.nome || user.username || 'U').slice(0,1).toUpperCase()}</span>
-            <button type="button" className="btn btn-ghost logout-button" aria-label="Sair da conta" title="Sair da conta" onClick={onLogout} disabled={leaving}><LogOut size={20}/><span>Sair</span></button>
+            <span className="workspace-semester"><CalendarDays size={17}/> Semestre atual</span>
+            <details className="account-menu">
+              <summary aria-label="Minha conta"><span className="avatar" aria-hidden="true">{(user.nome || user.username || 'U').slice(0,1).toUpperCase()}</span><span className="account-name"><strong>{user.nome || user.username}</strong><span>{area}</span></span><ChevronRight size={15}/></summary>
+              <div className="account-popover"><strong>{user.nome || user.username}</strong><p>{user.username} · {area}</p><button type="button" className="btn btn-ghost logout-button" onClick={onLogout} disabled={leaving}><LogOut size={18}/> {leaving ? 'Saindo…' : 'Sair da conta'}</button></div>
+            </details>
           </div>
         </div>
       </header>
@@ -85,7 +86,7 @@ export function Shell({ user, children }) {
               </NavLink>
             ))}
           </nav>
-          <div className="workspace-note"><span className="workspace-note-mark"><ShieldMark /></span><div><strong>Ambiente de demonstração</strong><p>Dados acadêmicos fictícios.</p></div></div>
+          <div className="workspace-note"><Info size={16}/><span>Demonstração · Dados fictícios</span></div>
         </div>
       </div>
       <main ref={mainRef} className="page-content" id="conteudo" tabIndex={-1}>
@@ -95,7 +96,6 @@ export function Shell({ user, children }) {
     </div>
   );
 }
-function ShieldMark() { return <Info size={20}/>; }
 export function PageTitle({ eyebrow, title, description, actions }) {
   return <div className="page-heading"><div className="page-heading-copy"><h1>{title}</h1>{description && <p className="page-description">{description}</p>}</div>{actions && <div className="page-actions">{actions}</div>}</div>;
 }
@@ -122,12 +122,12 @@ export function ErrorMessage({ error }) { return error ? <div className="form-er
 export function InlineNotice({ children, warning = false }) { return <p className={'notice-inline ' + (warning ? 'notice-warning' : '')}><Info size={16} aria-hidden="true"/>{children}</p>; }
 export function HoursProgress({ name, data, projected = false }) {
     const percent = projected ? data.percentualProjetado : data.percentual;
-    return <section className="progress-tile"><div className="progress-top"><h3>{name}</h3><strong>{percent}%</strong></div><div className="progress-track" role="progressbar" aria-label={`Conclusão ${name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}><span style={{ width: `${percent}%` }}/></div><div className="progress-metrics"><span><strong>{data.integralizada}h</strong> concluídas</span><span><strong>{data.exigida}h</strong> exigidas</span></div><div className="progress-divider"/><div className="progress-foot"><div><span className="stat-caption">Em curso</span><strong>{data.emCurso}h</strong></div>{projected && <div><span className="stat-caption">Planejadas viáveis</span><strong>{data.planejadaElegivel}h</strong></div>}<div><span className="stat-caption">{projected ? 'Faltam na projeção' : 'Ainda faltam'}</span><strong>{projected ? data.faltanteProjetada : data.faltante}h</strong></div></div></section>;
+    return <section className="progress-tile"><div className="progress-top"><h3>{name}</h3><strong>{percent}%</strong></div><div className="progress-track" role="progressbar" aria-label={`${projected ? "Conclusão projetada" : "Conclusão"} ${name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}><span style={{ width: `${percent}%` }}/></div><div className="progress-metrics"><span><strong>{data.integralizada}h</strong> concluídas</span><span><strong>{data.exigida}h</strong> exigidas</span></div><div className="progress-divider"/><div className="progress-foot"><div><span className="stat-caption">Em curso</span><strong>{data.emCurso}h</strong></div>{projected && <div><span className="stat-caption">Planejadas viáveis</span><strong>{data.planejadaElegivel}h</strong></div>}<div><span className="stat-caption">{projected ? 'Faltam na projeção' : 'Ainda faltam'}</span><strong>{projected ? data.faltanteProjetada : data.faltante}h</strong></div></div></section>;
 }
 export function IntroLink({ to, children }) { return <Link to={to} className="text-link">{children} <ArrowRight size={16}/></Link>; }
 
 /** Native modal: browser handles focus trapping, Escape and background inertness. */
-export function ConfirmDialog({ title, description, confirmLabel, busy, error, onClose, onConfirm }) {
+export function ConfirmDialog({ title, description, confirmLabel, busy, error, onClose, onConfirm, destructive = true, children }) {
   const dialog = useRef(null);
   const titleId = useId(), descriptionId = useId();
   useEffect(() => {
@@ -140,9 +140,10 @@ export function ConfirmDialog({ title, description, confirmLabel, busy, error, o
     };
   }, []);
   return <dialog ref={dialog} className="confirm-dialog" aria-labelledby={titleId} aria-describedby={descriptionId} onCancel={e => { e.preventDefault(); if (!busy) onClose(); }}>
-    <div className="confirm-icon"><AlertCircle size={25}/></div>
+    <div className={`confirm-icon ${destructive ? "" : "confirm-icon-neutral"}`}>{destructive ? <AlertCircle size={25}/> : <BookOpenText size={25}/>}</div>
     <h2 id={titleId}>{title}</h2>
     <p id={descriptionId}>{description}</p>
+    {children}
     <ErrorMessage error={error}/>
     <div className="confirm-actions">
       <button type="button" className="btn btn-outline" autoFocus disabled={busy} onClick={onClose}>Voltar</button>
