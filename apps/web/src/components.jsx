@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useId } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { GraduationCap, BookOpenText, ClipboardList, TrendingUp, Layers3, UsersRound, School, LogOut, Menu, X, ArrowRight, ChevronLeft, ChevronRight, Search, RefreshCw, AlertCircle, CheckCircle2, Info, CalendarDays } from './icons';
 import { api } from './api';
-import { CinBrand, IdentityPattern } from './brand';
+import { CinBrand } from './brand';
 const ToastContext = createContext(() => { });
 export function ToastProvider({ children }) {
     const [toast, setToast] = useState(null);
@@ -34,6 +34,14 @@ export function Shell({ user, children }) {
   const persona = isStudent ? 'student' : 'secretary';
   const area = isStudent ? 'Área do aluno' : 'Secretaria';
   const current = nav.find(item => item.path === location.pathname);
+  const mainRef = useRef(null);
+  const firstRoute = useRef(true);
+  useEffect(() => {
+    document.title = `${current?.label || area} · Matrícula | CIn UFPE`;
+    if (firstRoute.current) { firstRoute.current = false; return; }
+    window.scrollTo(0,0);
+    mainRef.current?.focus({ preventScroll: true });
+  }, [location.pathname, current?.label, area]);
   const [leaving, setLeaving] = useState(false);
 
   async function onLogout() {
@@ -55,42 +63,41 @@ export function Shell({ user, children }) {
         <div className="institution-header-inner">
           <div className="institution-lockup">
             <CinBrand />
-            <div className="institution-product"><strong>Trama</strong><span>Sistema de matrícula</span></div>
+            <div className="institution-product"><strong>Matrícula</strong><span>Portal acadêmico</span></div>
           </div>
           <div className="account-tools">
-            <div className="account-name"><strong>{user.nome}</strong><span>{area}</span></div>
-            <span className="avatar" aria-hidden="true">{user.nome?.slice(0, 1).toUpperCase()}</span>
-            <button type="button" className="btn btn-outline logout-button" aria-label="Sair da conta" title="Sair da conta" onClick={onLogout} disabled={leaving}><LogOut size={19}/><span>Sair</span></button>
+            <span className="workspace-semester"><CalendarDays size={18}/> Semestre atual</span>
+            <div className="account-name"><strong>{user.nome || user.username}</strong><span>{area}</span></div>
+            <span className="avatar" aria-hidden="true">{(user.nome || user.username || 'U').slice(0,1).toUpperCase()}</span>
+            <button type="button" className="btn btn-ghost logout-button" aria-label="Sair da conta" title="Sair da conta" onClick={onLogout} disabled={leaving}><LogOut size={20}/><span>Sair</span></button>
           </div>
         </div>
       </header>
       <div className="area-bar">
         <div className="area-bar-inner">
-          <div className="area-label"><span className="persona-dot" />{area}</div>
+          <div className="area-label"><span className="persona-dot"/>{area}</div>
           <nav className="institution-nav" aria-label="Navegação principal">
             {nav.map(({ path, label, mobile, icon: Icon }) => (
               <NavLink key={path} end to={path} className={({ isActive }) => `nav-link ${isActive ? 'nav-active' : ''}`}>
-                <Icon size={20} />
+                <span className="nav-icon"><Icon size={22}/></span>
                 <span className="nav-desktop-label">{label}</span>
                 <span className="nav-mobile-label">{mobile || label}</span>
               </NavLink>
             ))}
           </nav>
-          <div className="semester-label"><CalendarDays size={17} /> Semestre corrente</div>
+          <div className="workspace-note"><span className="workspace-note-mark"><ShieldMark /></span><div><strong>Ambiente de demonstração</strong><p>Dados acadêmicos fictícios.</p></div></div>
         </div>
       </div>
-      <main className="page-content" id="conteudo" tabIndex={-1}>
-        <div className="page-inner">
-          <div className="context-line"><span>{area}</span><ArrowRight size={16}/><span>{current?.label || 'Visão geral'}</span></div>
-          {children}
-        </div>
+      <main ref={mainRef} className="page-content" id="conteudo" tabIndex={-1}>
+        <div className="page-inner">{children}</div>
+        <footer className="institution-footer"><span>Centro de Informática · UFPE</span><span>Projeto demonstrativo · CInCoders</span></footer>
       </main>
-      <footer className="institution-footer"><span>CIn / UFPE · Trama</span><span>Demonstração acadêmica · 2026</span></footer>
     </div>
   );
 }
+function ShieldMark() { return <Info size={20}/>; }
 export function PageTitle({ eyebrow, title, description, actions }) {
-  return <div className="page-heading"><div className="page-heading-copy"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1>{description && <p className="page-description">{description}</p>}</div><div className="page-heading-side"><IdentityPattern persona={undefined} className="heading-pattern" />{actions && <div className="page-actions">{actions}</div>}</div></div>;
+  return <div className="page-heading"><div className="page-heading-copy"><h1>{title}</h1>{description && <p className="page-description">{description}</p>}</div>{actions && <div className="page-actions">{actions}</div>}</div>;
 }
 export function Badge({ kind, children }) { const style = kind === 'OBRIGATORIA' ? 'badge-blue' : kind === 'PERFIL' ? 'badge-violet' : kind === 'LIVRE' ? 'badge-sand' : kind === 'good' ? 'badge-green' : kind === 'bad' ? 'badge-red' : 'badge-neutral'; return <span className={'badge ' + style}>{children}</span>; }
 export const categoryName = kind => ({ OBRIGATORIA: 'Obrigatória', PERFIL: 'Eletiva de perfil', LIVRE: 'Eletiva livre' })[kind] || kind;
@@ -107,7 +114,10 @@ export function QueryState({ loading, error, retry, empty, children }) {
 export function EmptyState({ title = 'Nada por aqui ainda', description = 'Os registros aparecerão nesta área.', icon: Icon = Info, action }) { return <div className="state-panel"><div className="state-icon"><Icon size={23}/></div><h2>{title}</h2><p>{description}</p>{action}</div>; }
 export function Pagination({ pagination, onChange }) { if (!pagination || pagination.totalPages <= 1)
     return null; const { page, totalPages, total } = pagination; return <div className="pagination"><span>{total} resultado{total !== 1 ? 's' : ''} · página {page} de {totalPages}</span><div className="pagination-buttons"><button aria-label="Página anterior" disabled={page <= 1} className="btn btn-outline btn-small" onClick={() => onChange(page - 1)}><ChevronLeft size={17}/> Anterior</button><button aria-label="Próxima página" disabled={page >= totalPages} className="btn btn-outline btn-small" onClick={() => onChange(page + 1)}>Próxima <ChevronRight size={17}/></button></div></div>; }
-export function SearchField({ value, onChange, placeholder }) { return <label className="search-wrap"><Search size={19} aria-hidden="true"/><span className="sr-only">Buscar</span><input type="search" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder || 'Buscar por código ou nome'}/></label>; }
+export function SearchField({ value, onChange, placeholder }) {
+  const field = useRef(null);
+  return <div className="search-wrap" role="search"><Search size={19}/><input ref={field} aria-label="Buscar" type="search" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder || 'Buscar por código ou nome'}/>{value && <button className="clear-search" type="button" aria-label="Limpar busca" onClick={() => { onChange(''); field.current?.focus(); }}><X size={16}/></button>}</div>;
+}
 export function ErrorMessage({ error }) { return error ? <div className="form-error" role="alert"><AlertCircle size={17}/><span>{error.message}</span></div> : null; }
 export function InlineNotice({ children, warning = false }) { return <p className={'notice-inline ' + (warning ? 'notice-warning' : '')}><Info size={16} aria-hidden="true"/>{children}</p>; }
 export function HoursProgress({ name, data, projected = false }) {
@@ -115,3 +125,28 @@ export function HoursProgress({ name, data, projected = false }) {
     return <section className="progress-tile"><div className="progress-top"><h3>{name}</h3><strong>{percent}%</strong></div><div className="progress-track" role="progressbar" aria-label={`Conclusão ${name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}><span style={{ width: `${percent}%` }}/></div><div className="progress-metrics"><span><strong>{data.integralizada}h</strong> concluídas</span><span><strong>{data.exigida}h</strong> exigidas</span></div><div className="progress-divider"/><div className="progress-foot"><div><span className="stat-caption">Em curso</span><strong>{data.emCurso}h</strong></div>{projected && <div><span className="stat-caption">Planejadas viáveis</span><strong>{data.planejadaElegivel}h</strong></div>}<div><span className="stat-caption">{projected ? 'Faltam na projeção' : 'Ainda faltam'}</span><strong>{projected ? data.faltanteProjetada : data.faltante}h</strong></div></div></section>;
 }
 export function IntroLink({ to, children }) { return <Link to={to} className="text-link">{children} <ArrowRight size={16}/></Link>; }
+
+/** Native modal: browser handles focus trapping, Escape and background inertness. */
+export function ConfirmDialog({ title, description, confirmLabel, busy, error, onClose, onConfirm }) {
+  const dialog = useRef(null);
+  const titleId = useId(), descriptionId = useId();
+  useEffect(() => {
+    const el = dialog.current;
+    const previous = document.activeElement;
+    if (!el.open) el.showModal();
+    return () => {
+      if (el.open) el.close();
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+    };
+  }, []);
+  return <dialog ref={dialog} className="confirm-dialog" aria-labelledby={titleId} aria-describedby={descriptionId} onCancel={e => { e.preventDefault(); if (!busy) onClose(); }}>
+    <div className="confirm-icon"><AlertCircle size={25}/></div>
+    <h2 id={titleId}>{title}</h2>
+    <p id={descriptionId}>{description}</p>
+    <ErrorMessage error={error}/>
+    <div className="confirm-actions">
+      <button type="button" className="btn btn-outline" autoFocus disabled={busy} onClick={onClose}>Voltar</button>
+      <button type="button" className="btn btn-primary" aria-busy={busy} disabled={busy} onClick={onConfirm}>{busy ? <><span className="button-spinner" aria-hidden="true"/> Aguarde…</> : confirmLabel}</button>
+    </div>
+  </dialog>;
+}
