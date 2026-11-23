@@ -24,8 +24,8 @@ function useSearchList() {
 export function Offers() {
     const { query, page, search, setSearch, goPage } = useSearchList(), qc = useQueryClient(), notify = useNotify();
     const data = useQuery({ queryKey: ['ofertas', query, page], queryFn: ({ signal }) => api(`/aluno/ofertas?${new URLSearchParams({ q: query, page: String(page), limit: '8' })}`, { signal }) });
-    const [view, setView] = useState(() => localStorage.getItem('trama-offer-view') === 'list' ? 'list' : 'grid');
-    const setLayout = next => { setView(next); localStorage.setItem('trama-offer-view', next); };
+    const [view, setView] = useState(() => { try { return localStorage.getItem('trama-offer-view') === 'list' ? 'list' : 'grid'; } catch { return 'grid'; } });
+    const setLayout = next => { setView(next); try { localStorage.setItem('trama-offer-view', next); } catch { /* Preferences are optional. */ } };
     const currentEnrollments = useQuery({ queryKey: ['matriculas'], queryFn: () => api('/aluno/matriculas') });
     const currentPlan = useQuery({ queryKey: ['plano'], queryFn: () => api('/aluno/plano') });
     const plannedSubjects = new Set(currentPlan.data?.itens.map(x => x.disciplina.id) ?? []);
