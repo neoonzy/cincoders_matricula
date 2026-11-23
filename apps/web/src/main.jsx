@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
-import { GraduationCap, ArrowRight, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { GraduationCap, ArrowRight, ShieldCheck, Eye, EyeOff, School } from './icons';
+import { CinBrand, IdentityPattern } from './brand';
 import { api } from './api';
 import { Shell, ToastProvider, ErrorMessage } from './components';
 import { Offers, Enrollments, Progress, Planning } from './student';
@@ -10,27 +11,108 @@ import { Disciplines, Professors, Sections } from './secretary';
 import './styles.css';
 const qc = new QueryClient({ defaultOptions: { queries: { staleTime: 15000, retry: 1, refetchOnWindowFocus: true } } });
 const startPath = user => user.perfil === 'SECRETARIA' ? '/secretaria/disciplinas' : '/aluno/ofertas';
-function useMe() { return useQuery({ queryKey: ['me'], queryFn: () => api('/auth/me'), retry: false, staleTime: 60000 }); }
+function useMe() { return useQuery({ queryKey: ['me'], queryFn: ({ signal }) => api('/auth/me', { signal }), retry: false, staleTime: 60000 }); }
 function SessionWatcher() { const navigate = useNavigate(), client = useQueryClient(); useEffect(() => { const fn = () => { client.setQueryData(['me'], null); navigate('/login', { replace: true }); }; window.addEventListener('sessao-expirada', fn); return () => window.removeEventListener('sessao-expirada', fn); }, [navigate, client]); return null; }
 function Login() {
-    const navigate = useNavigate(), client = useQueryClient(), { data: user } = useMe();
-    const [username, setUsername] = useState(''), [password, setPassword] = useState(''), [showPassword, setShowPassword] = useState(false), [error, setError] = useState(null), [busy, setBusy] = useState(false);
-    useEffect(() => { if (user)
-        navigate(startPath(user), { replace: true }); }, [user, navigate]);
-    const submit = async (event) => { event.preventDefault(); setBusy(true); setError(null); try {
-        await api('/auth/login', { method: 'POST', body: { username, password } });
-        await client.cancelQueries({ queryKey: ['me'] });
-        const me = await api('/auth/me');
-        client.setQueryData(['me'], me);
-        navigate(startPath(me), { replace: true });
+  const navigate = useNavigate();
+  const client = useQueryClient();
+  const { data: user } = useMe();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (user) navigate(startPath(user), { replace: true });
+  }, [user, navigate]);
+
+  async function submit(event) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await client.cancelQueries({ queryKey: ['me'] });
+      await api('/auth/login', { method: 'POST', body: { username, password } });
+      const me = await api('/auth/me');
+      client.setQueryData(['me'], me);
+      navigate(startPath(me), { replace: true });
+    } catch (e) {
+      setError(e);
+    } finally {
+      setBusy(false);
     }
-    catch (e) {
-        setError(e);
-    }
-    finally {
-        setBusy(false);
-    } };
-    return <div className="login-page"><div className="login-art" aria-hidden="true"><div className="login-art-top"><span className="mark-text">t.</span><span>ACESSO ACADÊMICO / 2026</span></div><div className="login-art-content"><span className="login-seal">SISTEMA DE MATRÍCULA</span><h2>Seu próximo<br /><em>passo</em> começa<br />por aqui<span>.</span></h2><p>Disciplinas, matrículas e progresso.<br />Tudo mais simples, do seu jeito.</p></div><div className="login-art-bottom"><span>UM ESPAÇO PARA ORGANIZAR O QUE VEM A SEGUIR</span><span>↗</span></div><div className="art-ring art-ring-one"/><div className="art-ring art-ring-two"/></div><div className="login-panel"><div className="login-panel-head"><div className="compact-brand"><div className="brand-icon"><GraduationCap size={22}/></div><strong>trama<span>.</span></strong></div><span className="login-tag">PORTAL ACADÊMICO</span></div><div className="login-form-wrap"><div className="welcome-symbol"><ShieldCheck size={23}/></div><p className="eyebrow">BEM-VINDO DE VOLTA</p><h1>Entre na sua conta<span>.</span></h1><p className="welcome-description">Acesse as disciplinas do semestre, acompanhe suas matrículas e planeje os próximos passos.</p><form onSubmit={submit} className="login-form"><label>Nome de usuário<input required autoComplete="username" value={username} onChange={e => setUsername(e.target.value)} placeholder="Ex.: ana.si" disabled={busy}/></label><label>Senha<div className="password-wrap"><input type={showPassword ? 'text' : 'password'} required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Digite sua senha" disabled={busy}/><button type="button" onClick={() => setShowPassword(v => !v)} aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}><span>{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</span></button></div></label><ErrorMessage error={error}/><button className="btn btn-primary login-submit" type="submit" disabled={busy}>{busy ? 'Entrando…' : 'Entrar no portal'} <ArrowRight size={18}/></button></form>{<div className="demo-box"><span className="demo-label">CONTAS DE DEMONSTRAÇÃO</span><p><strong>ana.si</strong> · <strong>bruno.ec</strong> · <strong>secretaria</strong></p><p>Senha de teste: <code>Teste@2026</code></p><p className="demo-small">Dados acadêmicos fictícios criados para a seleção.</p></div>}</div><footer className="login-footer"><span>Projeto demonstrativo · CIn/UFPE</span><span>2026</span></footer></div></div>;
+  }
+
+  function fillDemo(account) {
+    setUsername(account);
+    setPassword('Teste@2026');
+    setError(null);
+  }
+
+  return (
+    <div className="login-page">
+      <header className="login-header">
+        <CinBrand />
+        <div className="institution-product">
+          <strong>Trama</strong>
+          <span>Sistema de matrícula</span>
+        </div>
+        <span className="edition-label">DEMONSTRAÇÃO / 2026</span>
+      </header>
+      <main className="login-layout" id="conteudo">
+        <section className="login-panel" aria-labelledby="login-title">
+          <div className="login-form-wrap">
+            <p className="eyebrow"><ShieldCheck size={16} /> Acesso ao portal acadêmico</p>
+            <h1 id="login-title">Entrar no sistema<span>.</span></h1>
+            <p className="welcome-description">Use sua conta para acessar as matrículas do semestre.</p>
+            <form onSubmit={submit} className="login-form">
+              <label htmlFor="login-username">Nome de usuário</label>
+              <input id="login-username" required autoComplete="username" autoCapitalize="none" spellCheck={false} value={username} onChange={e => setUsername(e.target.value)} placeholder="Ex.: ana.si" disabled={busy} />
+              <label htmlFor="login-password">Senha</label>
+              <div className="password-wrap">
+                <input id="login-password" type={showPassword ? 'text' : 'password'} required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Digite sua senha" disabled={busy} />
+                <button type="button" onClick={() => setShowPassword(v => !v)} aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={showPassword}>
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+              <ErrorMessage error={error} />
+              <button className="btn btn-primary login-submit" type="submit" disabled={busy}>
+                {busy ? 'Entrando…' : 'Entrar no portal'} <ArrowRight size={20} />
+              </button>
+            </form>
+            <section className="demo-box" aria-label="Contas de demonstração">
+              <div className="demo-heading"><span className="demo-label">Experimente a demonstração</span><span className="badge badge-neutral">Dados fictícios</span></div>
+              <p>Selecione uma conta para preencher o formulário de acesso.</p>
+              <div className="demo-accounts">
+                {['ana.si', 'bruno.ec', 'carla.ec', 'secretaria'].map(account => (
+                  <button key={account} type="button" className="btn btn-outline btn-small" onClick={() => fillDemo(account)} disabled={busy}>
+                    {account === 'secretaria' ? <School size={17} /> : <GraduationCap size={17} />}
+                    {account}
+                  </button>
+                ))}
+              </div>
+              <p className="demo-small">Senha de teste: <code>Teste@2026</code></p>
+            </section>
+          </div>
+        </section>
+        <aside className="login-context" aria-label="Sobre o sistema">
+          <div className="context-intro"><span className="eyebrow">CIn / Gestão acadêmica</span><h2>Seu semestre, em um só lugar.</h2><p>Consulte as disciplinas, gerencie suas matrículas e acompanhe a trajetória acadêmica.</p></div>
+          <div className="context-persona context-student">
+            <div><span className="persona-index">01 / Graduação</span><h3>Área do aluno</h3><p>Ofertas, matrículas, progresso e planejamento curricular.</p></div>
+            <IdentityPattern persona="student" />
+          </div>
+          <div className="context-persona context-secretary">
+            <div><span className="persona-index">02 / Administração</span><h3>Secretaria</h3><p>Cadastro de disciplinas, docentes, turmas e vagas.</p></div>
+            <IdentityPattern persona="secretary" />
+          </div>
+        </aside>
+      </main>
+      <footer className="login-footer">
+        <span>Centro de Informática · Universidade Federal de Pernambuco</span>
+        <span>Projeto demonstrativo CInCoders · Não é um serviço oficial da UFPE</span>
+      </footer>
+    </div>
+  );
 }
 function Guard({ role, children }) { const { data: user, isLoading, isError } = useMe(); if (isLoading)
     return <div className="full-screen-loading" role="status">Carregando sessão…</div>; if (isError || !user)

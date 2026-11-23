@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { GraduationCap, BookOpenText, ClipboardList, TrendingUp, Layers3, UsersRound, School, LogOut, Menu, X, ArrowRight, ChevronLeft, ChevronRight, Search, RefreshCw, AlertCircle, CheckCircle2, Info, CalendarDays } from 'lucide-react';
+import { GraduationCap, BookOpenText, ClipboardList, TrendingUp, Layers3, UsersRound, School, LogOut, Menu, X, ArrowRight, ChevronLeft, ChevronRight, Search, RefreshCw, AlertCircle, CheckCircle2, Info, CalendarDays } from './icons';
 import { api } from './api';
+import { CinBrand, IdentityPattern } from './brand';
 const ToastContext = createContext(() => { });
 export function ToastProvider({ children }) {
     const [toast, setToast] = useState(null);
@@ -12,40 +13,85 @@ export function ToastProvider({ children }) {
     return <ToastContext.Provider value={notify}>{children}{toast && <div className={'toast ' + (toast.type === 'error' ? 'toast-error' : '')} role={toast.type === 'error' ? 'alert' : 'status'}><span>{toast.type === 'error' ? <AlertCircle size={19}/> : <CheckCircle2 size={19}/>}</span><p>{toast.message}</p><button aria-label="Fechar notificação" onClick={() => setToast(null)}><X size={16}/></button></div>}</ToastContext.Provider>;
 }
 export const useNotify = () => useContext(ToastContext);
-const STUDENT_NAV = [{ path: '/aluno/ofertas', label: 'Ofertas', icon: BookOpenText }, { path: '/aluno/matriculas', label: 'Minhas matrículas', icon: ClipboardList }, { path: '/aluno/progresso', label: 'Meu progresso', icon: TrendingUp }, { path: '/aluno/planejamento', label: 'Planejamento', icon: Layers3 }];
-const ADMIN_NAV = [{ path: '/secretaria/disciplinas', label: 'Disciplinas', icon: BookOpenText }, { path: '/secretaria/professores', label: 'Professores', icon: UsersRound }, { path: '/secretaria/turmas', label: 'Turmas', icon: School }];
+const STUDENT_NAV = [
+  { path: '/aluno/ofertas', label: 'Ofertas', icon: BookOpenText },
+  { path: '/aluno/matriculas', label: 'Minhas matrículas', mobile: 'Matrículas', icon: ClipboardList },
+  { path: '/aluno/progresso', label: 'Meu progresso', mobile: 'Progresso', icon: TrendingUp },
+  { path: '/aluno/planejamento', label: 'Planejamento', icon: Layers3 }
+];
+const ADMIN_NAV = [
+  { path: '/secretaria/disciplinas', label: 'Disciplinas', icon: BookOpenText },
+  { path: '/secretaria/professores', label: 'Professores', icon: UsersRound },
+  { path: '/secretaria/turmas', label: 'Turmas', icon: School }
+];
 export function Shell({ user, children }) {
-    const [mobileOpen, setMobileOpen] = useState(false), [isMobile, setIsMobile] = useState(false);
-    const menuButton = useRef(null), closeButton = useRef(null);
-    const location = useLocation(), navigate = useNavigate(), qc = useQueryClient(), notify = useNotify();
-    useEffect(() => setMobileOpen(false), [location.pathname]);
-    useEffect(() => { const mq = window.matchMedia('(max-width:700px)'); const sync = () => setIsMobile(mq.matches); sync(); mq.addEventListener('change', sync); return () => mq.removeEventListener('change', sync); }, []);
-    useEffect(() => { if (!mobileOpen)
-        return; closeButton.current?.focus(); const key = e => { if (e.key === 'Escape') {
-        setMobileOpen(false);
-        menuButton.current?.focus();
-    } }; window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key); }, [mobileOpen]);
-    const isStudent = user.perfil === 'ALUNO', nav = isStudent ? STUDENT_NAV : ADMIN_NAV;
-    const onLogout = async () => { try {
-        await api('/auth/logout', { method: 'POST' });
-        qc.clear();
-        navigate('/login', { replace: true });
+  const location = useLocation();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const notify = useNotify();
+  const isStudent = user.perfil === 'ALUNO';
+  const nav = isStudent ? STUDENT_NAV : ADMIN_NAV;
+  const persona = isStudent ? 'student' : 'secretary';
+  const area = isStudent ? 'Área do aluno' : 'Secretaria';
+  const current = nav.find(item => item.path === location.pathname);
+  const [leaving, setLeaving] = useState(false);
+
+  async function onLogout() {
+    setLeaving(true);
+    try {
+      await api('/auth/logout', { method: 'POST' });
+      qc.clear();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      notify(error.message, 'error');
+    } finally {
+      setLeaving(false);
     }
-    catch (error) {
-        notify(error.message, 'error');
-    } };
-    return <div className="app-frame">
-    <aside id="navegacao-principal" className={'sidebar ' + (mobileOpen ? 'sidebar-open' : '')} aria-label="Navegação principal" inert={isMobile && !mobileOpen}>
-      <div className="brand-block"><div className="brand-icon" aria-hidden="true"><GraduationCap size={25} strokeWidth={1.8}/></div><div><span className="brand-name">trama<span className="brand-period">.</span></span><span className="brand-subtitle">portal acadêmico</span></div><button ref={closeButton} className="mobile-close icon-button" aria-label="Fechar navegação" onClick={() => setMobileOpen(false)}><X size={20}/></button></div>
-      <div className="nav-group-label">ESPAÇO {isStudent ? 'DO ALUNO' : 'DA SECRETARIA'}</div>
-      <nav className="side-nav">{nav.map(({ path, label, icon: Icon }) => <NavLink end key={path} to={path} className={({ isActive }) => `nav-link ${isActive ? 'nav-active' : ''}`}><Icon size={19} strokeWidth={1.9}/>{label}</NavLink>)}</nav>
-      <div className="sidebar-bottom"><div className="support-note"><div className="support-icon"><CalendarDays size={17}/></div><div><strong>Semestre corrente</strong><span>Suas informações em um só lugar.</span></div></div><div className="side-user"><div className="avatar">{user.nome?.slice(0, 1).toUpperCase()}</div><div className="side-user-name"><strong>{user.nome}</strong><span>{isStudent ? 'Estudante' : 'Secretaria de Graduação'}</span></div><button className="icon-button logout" title="Sair" aria-label="Sair da conta" onClick={onLogout}><LogOut size={19}/></button></div></div>
-    </aside>
-    {mobileOpen && <button className="menu-scrim" onClick={() => setMobileOpen(false)} aria-label="Fechar menu"/>}
-    <div className="workspace"><header className="topbar"><button ref={menuButton} className="icon-button menu-trigger" aria-label="Abrir navegação" aria-controls="navegacao-principal" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)}><Menu size={22}/></button><div className="breadcrumbs"><span>Portal acadêmico</span><ArrowRight size={14}/><strong>{nav.find(n => location.pathname === n.path)?.label || 'Visão geral'}</strong></div><div className="topbar-right"><span className="top-badge">{isStudent ? 'ÁREA DO ALUNO' : 'SECRETARIA'}</span><span className="top-avatar">{user.nome?.slice(0, 1).toUpperCase()}</span></div></header><main className="page-content" id="conteudo"><div className="page-inner">{children}</div></main></div>
-  </div>;
+  }
+  return (
+    <div className="app-frame" data-persona={persona}>
+      <a href="#conteudo" className="skip-link">Ir para o conteúdo</a>
+      <header className="institution-header">
+        <div className="institution-header-inner">
+          <div className="institution-lockup">
+            <CinBrand />
+            <div className="institution-product"><strong>Trama</strong><span>Sistema de matrícula</span></div>
+          </div>
+          <div className="account-tools">
+            <div className="account-name"><strong>{user.nome}</strong><span>{area}</span></div>
+            <span className="avatar" aria-hidden="true">{user.nome?.slice(0, 1).toUpperCase()}</span>
+            <button type="button" className="btn btn-outline logout-button" aria-label="Sair da conta" title="Sair da conta" onClick={onLogout} disabled={leaving}><LogOut size={19}/><span>Sair</span></button>
+          </div>
+        </div>
+      </header>
+      <div className="area-bar">
+        <div className="area-bar-inner">
+          <div className="area-label"><span className="persona-dot" />{area}</div>
+          <nav className="institution-nav" aria-label="Navegação principal">
+            {nav.map(({ path, label, mobile, icon: Icon }) => (
+              <NavLink key={path} end to={path} className={({ isActive }) => `nav-link ${isActive ? 'nav-active' : ''}`}>
+                <Icon size={20} />
+                <span className="nav-desktop-label">{label}</span>
+                <span className="nav-mobile-label">{mobile || label}</span>
+              </NavLink>
+            ))}
+          </nav>
+          <div className="semester-label"><CalendarDays size={17} /> Semestre corrente</div>
+        </div>
+      </div>
+      <main className="page-content" id="conteudo" tabIndex={-1}>
+        <div className="page-inner">
+          <div className="context-line"><span>{area}</span><ArrowRight size={16}/><span>{current?.label || 'Visão geral'}</span></div>
+          {children}
+        </div>
+      </main>
+      <footer className="institution-footer"><span>CIn / UFPE · Trama</span><span>Demonstração acadêmica · 2026</span></footer>
+    </div>
+  );
 }
-export function PageTitle({ eyebrow, title, description, actions }) { return <div className="page-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1>{description && <p className="page-description">{description}</p>}</div>{actions && <div className="page-actions">{actions}</div>}</div>; }
+export function PageTitle({ eyebrow, title, description, actions }) {
+  return <div className="page-heading"><div className="page-heading-copy"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1>{description && <p className="page-description">{description}</p>}</div><div className="page-heading-side"><IdentityPattern persona={undefined} className="heading-pattern" />{actions && <div className="page-actions">{actions}</div>}</div></div>;
+}
 export function Badge({ kind, children }) { const style = kind === 'OBRIGATORIA' ? 'badge-blue' : kind === 'PERFIL' ? 'badge-violet' : kind === 'LIVRE' ? 'badge-sand' : kind === 'good' ? 'badge-green' : kind === 'bad' ? 'badge-red' : 'badge-neutral'; return <span className={'badge ' + style}>{children}</span>; }
 export const categoryName = kind => ({ OBRIGATORIA: 'Obrigatória', PERFIL: 'Eletiva de perfil', LIVRE: 'Eletiva livre' })[kind] || kind;
 export function Availability({ remaining, total }) { const full = remaining === 0; return <span className={'availability ' + (full ? 'availability-full' : '')}><span className="availability-dot"/>{full ? 'Turma lotada' : `${remaining} de ${total} vagas disponíveis`}</span>; }
