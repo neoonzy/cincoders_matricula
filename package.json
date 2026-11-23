@@ -3,17 +3,22 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:api": "npm run dev -w @matricula/api",
     "dev:web": "npm run dev -w @matricula/web",
     "db:migrate": "npm run db:migrate -w @matricula/api",
     "db:seed": "npm run db:seed -w @matricula/api",
-    "test": "node --test packages/domain/test/*.test.mjs",
+    "test": "node --test packages/domain/test/*.test.mjs apps/api/test/pagination.test.mjs",
     "test:integration": "npm run test:integration -w @matricula/api",
     "build": "npm run build -w @matricula/web",
     "check": "npm test && npm run build"
   },
-  "engines": {"node": ">=22"}
+  "engines": {
+    "node": ">=22"
+  }
 }

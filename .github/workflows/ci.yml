@@ -1,0 +1,44 @@
+name: Verificação do sistema de matrícula
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: matricula_test
+          POSTGRES_USER: matricula
+          POSTGRES_PASSWORD: matricula
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U matricula -d matricula_test"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 15
+    env:
+      TEST_DATABASE_URL: postgres://matricula:matricula@127.0.0.1:5432/matricula_test
+      SESSION_SECRET: chave-de-testes-github-com-pelo-menos-trinta-e-dois-caracteres
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar dependências
+        run: npm install --no-audit --no-fund
+      - name: Testar regras de negócio
+        run: npm test
+      - name: Testar API com PostgreSQL real
+        run: npm run test:integration
+      - name: Compilar frontend
+        run: npm run build
