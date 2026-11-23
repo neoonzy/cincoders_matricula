@@ -10,6 +10,7 @@ import { Offers, Enrollments, Progress, Planning } from './student';
 import { Disciplines, Professors, Sections } from './secretary';
 import './styles.css';
 import './polish.css';
+import './refined.css';
 const qc = new QueryClient({ defaultOptions: { queries: { staleTime: 15000, retry: 1, refetchOnWindowFocus: true } } });
 const startPath = user => user.perfil === 'SECRETARIA' ? '/secretaria/disciplinas' : '/aluno/ofertas';
 function useMe() { return useQuery({ queryKey: ['me'], queryFn: ({ signal }) => api('/auth/me', { signal }), retry: false, staleTime: 60000 }); }
@@ -48,6 +49,7 @@ function Login() {
     setUsername(account);
     setPassword('Teste@2026');
     setError(null);
+    document.getElementById('login-username')?.focus();
   }
 
   return (
@@ -56,9 +58,9 @@ function Login() {
       <main className="login-layout" id="conteudo">
         <section className="login-panel" aria-labelledby="login-title">
           <div className="login-form-wrap">
-            <div className="login-app-icon" aria-hidden="true"><GraduationCap size={32}/></div>
+            <div className="login-app-icon" aria-hidden="true"><GraduationCap size={28}/></div>
             <h1 id="login-title">Entrar no sistema</h1>
-            <p className="welcome-description">Acesse sua conta para gerenciar as matrículas do semestre.</p>
+            <p className="welcome-description">Acesse o portal de matrículas do CIn.</p>
             <form onSubmit={submit} className="login-form">
               <label htmlFor="login-username">Nome de usuário</label>
               <input id="login-username" required autoComplete="username" autoCapitalize="none" spellCheck={false} value={username} onChange={e => setUsername(e.target.value)} placeholder="Ex.: ana.si" disabled={busy}/>
@@ -70,7 +72,7 @@ function Login() {
           </div>
           <details className="demo-box">
             <summary>Experimentar com uma conta de teste</summary>
-            <p>Selecione um perfil. Os dados são fictícios.</p>
+            <p>Escolha uma conta para preencher o formulário.</p>
             <div className="demo-accounts">
               {['ana.si', 'bruno.ec', 'carla.ec', 'secretaria'].map(account => (
                 <button key={account} type="button" className="demo-account" onClick={() => fillDemo(account)} disabled={busy}>
