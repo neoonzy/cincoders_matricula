@@ -1,4 +1,4 @@
-# Trama — Sistema de Matrícula
+# Matrícula — CIn UFPE
 
 Teste prático nº 5/2026 · Bolsa de Inovação Tecnológica em Engenharia de Software · CIn/UFPE.
 

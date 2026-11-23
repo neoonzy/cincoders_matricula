@@ -9,6 +9,7 @@ import { Shell, ToastProvider, ErrorMessage } from './components';
 import { Offers, Enrollments, Progress, Planning } from './student';
 import { Disciplines, Professors, Sections } from './secretary';
 import './styles.css';
+import './polish.css';
 const qc = new QueryClient({ defaultOptions: { queries: { staleTime: 15000, retry: 1, refetchOnWindowFocus: true } } });
 const startPath = user => user.perfil === 'SECRETARIA' ? '/secretaria/disciplinas' : '/aluno/ofertas';
 function useMe() { return useQuery({ queryKey: ['me'], queryFn: ({ signal }) => api('/auth/me', { signal }), retry: false, staleTime: 60000 }); }
@@ -51,20 +52,20 @@ function Login() {
 
   return (
     <div className="login-page">
-      <header className="login-header"><CinBrand/><span className="edition-label">Ambiente de demonstração</span></header>
+      <header className="login-header"><div className="institution-lockup"><CinBrand/><div className="institution-product"><strong>Matrícula</strong><span>Portal acadêmico</span></div></div><span className="edition-label">Ambiente de demonstração</span></header>
       <main className="login-layout" id="conteudo">
         <section className="login-panel" aria-labelledby="login-title">
           <div className="login-form-wrap">
             <div className="login-app-icon" aria-hidden="true"><GraduationCap size={32}/></div>
-            <h1 id="login-title">Entrar no sistema.</h1>
-            <p className="welcome-description">Acesse sua conta no Trama, o portal de matrículas.</p>
+            <h1 id="login-title">Entrar no sistema</h1>
+            <p className="welcome-description">Acesse sua conta para gerenciar as matrículas do semestre.</p>
             <form onSubmit={submit} className="login-form">
               <label htmlFor="login-username">Nome de usuário</label>
               <input id="login-username" required autoComplete="username" autoCapitalize="none" spellCheck={false} value={username} onChange={e => setUsername(e.target.value)} placeholder="Ex.: ana.si" disabled={busy}/>
               <label htmlFor="login-password">Senha</label>
               <div className="password-wrap"><input id="login-password" type={showPassword ? 'text' : 'password'} required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Sua senha" disabled={busy}/><button type="button" onClick={() => setShowPassword(v => !v)} aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={showPassword}>{showPassword ? <EyeOff size={20}/> : <Eye size={20}/>}</button></div>
               <ErrorMessage error={error}/>
-              <button className="btn btn-primary login-submit" type="submit" disabled={busy}>{busy ? 'Entrando…' : 'Entrar no portal'}<ArrowRight size={19}/></button>
+              <button className="btn btn-primary login-submit" type="submit" disabled={busy} aria-busy={busy}>{busy ? <><span className="button-spinner" aria-hidden="true"/> Entrando…</> : <>Entrar no portal <ArrowRight size={19}/></>}</button>
             </form>
           </div>
           <details className="demo-box">
@@ -85,8 +86,9 @@ function Login() {
   );
 }
 
-function Guard({ role, children }) { const { data: user, isLoading, isError } = useMe(); if (isLoading)
-    return <div className="full-screen-loading" role="status">Carregando sessão…</div>; if (isError || !user)
+function Guard({ role, children }) { const { data: user, isLoading, isError, error, refetch, isFetching } = useMe(); if (isLoading)
+    return <div className="full-screen-loading" role="status">Carregando sessão…</div>; if (isError && error?.status !== 401 && !user)
+    return <div className="full-screen-loading"><section className="state-panel session-error" role="alert"><h2>Não foi possível verificar sua sessão</h2><p>{error?.message}</p><button className="btn btn-primary" type="button" disabled={isFetching} onClick={() => refetch()}>Tentar novamente</button><button className="btn btn-ghost" type="button" onClick={() => window.location.assign('/login')}>Voltar ao acesso</button></section></div>; if (isError || !user)
     return <Navigate to="/login" replace/>; if (user.perfil !== role)
     return <Navigate to={startPath(user)} replace/>; return <Shell user={user}>{children}</Shell>; }
 function AppRoutes() { return <><SessionWatcher /><Routes><Route path="/login" element={<Login />}/><Route path="/aluno/ofertas" element={<Guard role="ALUNO"><Offers /></Guard>}/><Route path="/aluno/matriculas" element={<Guard role="ALUNO"><Enrollments /></Guard>}/><Route path="/aluno/progresso" element={<Guard role="ALUNO"><Progress /></Guard>}/><Route path="/aluno/planejamento" element={<Guard role="ALUNO"><Planning /></Guard>}/><Route path="/secretaria/disciplinas" element={<Guard role="SECRETARIA"><Disciplines /></Guard>}/><Route path="/secretaria/professores" element={<Guard role="SECRETARIA"><Professors /></Guard>}/><Route path="/secretaria/turmas" element={<Guard role="SECRETARIA"><Sections /></Guard>}/><Route path="*" element={<DefaultRoute />}/></Routes></>; }

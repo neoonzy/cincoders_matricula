@@ -24,8 +24,8 @@ function useSearchList() {
 export function Offers() {
     const { query, page, search, setSearch, goPage } = useSearchList(), qc = useQueryClient(), notify = useNotify();
     const data = useQuery({ queryKey: ['ofertas', query, page], queryFn: ({ signal }) => api(`/aluno/ofertas?${new URLSearchParams({ q: query, page: String(page), limit: '8' })}`, { signal }) });
-    const [view, setView] = useState(() => { try { return localStorage.getItem('trama-offer-view') === 'list' ? 'list' : 'grid'; } catch { return 'grid'; } });
-    const setLayout = next => { setView(next); try { localStorage.setItem('trama-offer-view', next); } catch { /* Preferences are optional. */ } };
+    const [view, setView] = useState(() => { try { return (localStorage.getItem('matricula-offer-view') || localStorage.getItem('trama-offer-view')) === 'list' ? 'list' : 'grid'; } catch { return 'grid'; } });
+    const setLayout = next => { setView(next); try { localStorage.setItem('matricula-offer-view', next); } catch { /* Preferences are optional. */ } };
     const currentEnrollments = useQuery({ queryKey: ['matriculas'], queryFn: () => api('/aluno/matriculas') });
     const currentPlan = useQuery({ queryKey: ['plano'], queryFn: () => api('/aluno/plano') });
     const plannedSubjects = new Set(currentPlan.data?.itens.map(x => x.disciplina.id) ?? []);
@@ -41,8 +41,8 @@ export function Offers() {
       </div>
       <section className="catalog" aria-label="Catálogo de ofertas">
         <div className="catalog-header">
-          <div className="catalog-title"><h2>Turmas ofertadas</h2><span>{data.data ? `${data.data.pagination.total} resultados` : 'Consulte o catálogo'}</span></div>
-          <div className="catalog-controls"><SearchField value={search} onChange={setSearch} placeholder="Buscar disciplinas"/><div className="view-switch" role="group" aria-label="Visualização das ofertas"><button type="button" aria-pressed={view === 'grid'} title="Grade" onClick={() => setLayout('grid')}><span className="layout-grid-icon" aria-hidden="true"/><span className="sr-only">Grade</span></button><button type="button" aria-pressed={view === 'list'} title="Lista" onClick={() => setLayout('list')}><span className="layout-list-icon" aria-hidden="true"/><span className="sr-only">Lista</span></button></div></div>
+          <div className="catalog-title"><h2>Turmas ofertadas</h2><span role="status" aria-live="polite">{data.data ? `${data.data.pagination.total} ${data.data.pagination.total === 1 ? 'resultado' : 'resultados'}` : 'Consulte o catálogo'}</span></div>
+          <div className="catalog-controls"><SearchField value={search} onChange={setSearch} placeholder="Buscar por nome ou código"/><div className="view-switch" role="group" aria-label="Visualização das ofertas"><button type="button" aria-pressed={view === 'grid'} title="Grade" onClick={() => setLayout('grid')}><span className="layout-grid-icon" aria-hidden="true"/><span className="sr-only">Grade</span></button><button type="button" aria-pressed={view === 'list'} title="Lista" onClick={() => setLayout('list')}><span className="layout-list-icon" aria-hidden="true"/><span className="sr-only">Lista</span></button></div></div>
         </div>
         <p className="catalog-hint">Adicionar ao plano não reserva uma vaga. Matricule-se para confirmar sua escolha.</p>
         <QueryState loading={data.isLoading} error={data.error} retry={() => data.refetch()} empty={data.data && !data.data.items.length ? { title: query ? 'Nenhuma oferta encontrada' : 'Nenhuma turma aberta', description: query ? 'Tente outro termo de busca.' : 'As turmas aparecerão quando forem abertas pela secretaria.' } : null}>
