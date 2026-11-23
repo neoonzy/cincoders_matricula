@@ -55,7 +55,7 @@ else {
     test('Sessão adulterada e payload inválido são recusados', async () => {
         const ana = await auth('ana.si');
         assert.equal((await json(ana + 'adulterado', 'GET', '/api/aluno/progresso')).statusCode, 401);
-        assert.equal((await json(ana, 'POST', '/api/aluno/matriculas', { turmaId: 123 })).statusCode, 400);
+        assert.equal((await json(ana, 'POST', '/api/aluno/matriculas', { turmaId: { invalido: true } })).statusCode, 400);
     });
     test('RN-10/11/12/13: o progresso de Ana computa excedente, não reprovação', async () => {
         const ana = await auth('ana.si');
