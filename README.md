@@ -4,7 +4,7 @@ Teste prático nº 5/2026 · Bolsa de Inovação Tecnológica em Engenharia de S
 
 Aplicação web acadêmica com dois perfis: **aluno** (ofertas, matrícula, cancelamento, progresso e planejamento) e **secretaria** (disciplinas, professores, turmas e capacidade). O projeto preserva as **13 regras obrigatórias do edital** e especifica dois adicionais voluntários: **pré-requisitos** e **planejamento de matrícula com projeção curricular**.
 
-> **Estado de verificação neste pacote:** código-fonte de API e interface implementados, testes unitários do domínio executados com sucesso (14/14), sintaxe de `.mjs` e parsing de `.jsx` verificados. Integração com PostgreSQL, build Vite e smoke E2E estão preparados, mas **não foram executados neste ambiente**, pois faltam acesso ao registro npm, Docker/PostgreSQL e navegação Chromium local. Não interpretar o código como entrega validada de ponta a ponta antes dos passos de verificação abaixo.
+> **Estado de verificação neste pacote:** código-fonte de API e interface implementados, testes unitários e de paginação executados com sucesso (16/16), sintaxe de `.mjs` e parsing de `.jsx` verificados. Integração com PostgreSQL, build Vite e smoke E2E estão preparados, mas **não foram executados neste ambiente**, pois faltam acesso ao registro npm, Docker/PostgreSQL e navegação Chromium local. Não interpretar o código como entrega validada de ponta a ponta antes dos passos de verificação abaixo.
 
 ## Requisitos locais
 
@@ -19,7 +19,7 @@ Aplicação web acadêmica com dois perfis: **aluno** (ofertas, matrícula, canc
 # a partir da raiz do repositório
 cp .env.example .env
 # Troque SESSION_SECRET no .env por uma chave aleatória, com pelo menos 32 caracteres.
-npm install
+npm install --no-audit --no-fund
 
 docker compose up -d db
 npm run db:migrate
@@ -55,7 +55,7 @@ O seed é **idempotente**: insere registros conhecidos com `ON CONFLICT DO NOTHI
 ## Testes
 
 ```bash
-npm test                 # domínio isolado, sem dependências externas (14 testes)
+npm test                 # regras curriculares e paginação sem deps externas (16 testes)
 npm run build            # build de produção React/Vite (após npm install)
 ```
 
@@ -67,13 +67,13 @@ export TEST_DATABASE_URL=postgres://matricula:matricula@localhost:5432/matricula
 npm run test:integration
 ```
 
-O script de integração **recusa executar limpeza em DATABASE_URL**: exige `TEST_DATABASE_URL`. O navegador deve poder acessar a aplicação para o smoke:
+O script de integração **recusa executar limpeza em DATABASE_URL**: exige `TEST_DATABASE_URL`. A opção `--env-file-if-exists` (Node 22) permite rodar com `.env` local ou com variáveis injetadas pelo CI, sem precisar versionar segredos. O navegador deve poder acessar a aplicação para o smoke:
 
 ```bash
 python scripts/smoke_browser.py
 ```
 
-Esse smoke verifica login, navegação nas áreas do aluno e overflow horizontal em viewport **360px**. A matriz ampliada com 77 cenários planejados está em `docs/03-PLANO-DE-TESTES.md`; **não** é correto afirmar que todos foram automatizados ou executados.
+Esse smoke verifica login, navegação nas áreas do aluno e overflow horizontal em viewport **360px**. Um workflow GitHub Actions em `.github/workflows/ci.yml` verifica regras, integração PostgreSQL e build quando o ambiente de execução disponibilizar as dependências. A matriz ampliada com 77 cenários planejados está em `docs/03-PLANO-DE-TESTES.md`; **não** é correto afirmar que todos foram automatizados ou executados.
 
 ## Arquitetura
 
@@ -88,8 +88,10 @@ apps/
     test/                 # testes de API + PostgreSQL
   web/
     src/main.jsx          # rotas, login e guards
-    src/student.jsx       # experiências do aluno
-    src/secretary.jsx     # experiências da secretaria
+    src/student/          # ofertas, matrículas, progresso e planejamento
+    src/secretary/        # disciplinas, professores e turmas
+    src/student.jsx       # exports das jornadas do aluno
+    src/secretary.jsx     # exports das jornadas da secretaria
     src/components.jsx    # componentes e layouts reutilizáveis
     src/styles.css        # tokens e responsividade
 packages/
@@ -155,6 +157,18 @@ Códigos: `400` estrutura inválida; `401` sessão inválida; `403` sem permiss�
 Consultar `docs/05-DECISOES-E-IMPLEMENTACAO.md` e `docs/06-DESIGN-SYSTEM.md`. Os quatro arquivos originais de planejamento foram preservados.
 
 **Com mais tempo**: suíte E2E automatizada integrada ao CI, contrato compartilhado tipado, acessibilidade auditada por ferramentas automatizadas e usuários, suporte transacional a múltiplas condições de matrícula, atualização segura do snapshot histórico de CH, revogação de sessão no servidor, migrações incrementais versionadas, observabilidade e testes de carga. Não há integração com SIGAA, outros semestres, horários ou lista de espera.
+
+## Correções após auditoria de 22/11/2026
+
+- O CI e os scripts aceitam variáveis de ambiente sem exigir o arquivo `.env` (Node 22).
+- Páginas fora do intervalo são normalizadas para a última página válida, sincronizando a URL.
+- Ofertas indicam turmas já incluídas no planejamento e previnem inclusões repetidas.
+- Planejamento distingue CH selecionada, CH elegível e CH impedida, sem confundir simulação com matrícula.
+- Melhoria de contraste e uso intencional de fontes de sistema; preferência por movimento reduzido respeitada.
+- Os testes de integração agora cobrem também redução de capacidade **abaixo de 2 matrículas ativas**, unicidade de e-mail e autorização.
+- Foi adicionado workflow de verificação no GitHub, além do `.gitlab-ci.yml` exigido para o GitLab do CIn.
+
+**Limitações verificadas:** sem acesso ao registro npm neste container, o lockfile ainda não pôde ser gerado de modo confiável. O CI utiliza `npm install` até que `npm install --package-lock-only` seja executado em ambiente com acesso à rede; após commitar o lockfile, substituir por `npm ci`. Não declarar compilação, integração ou E2E aprovados sem os respectivos logs.
 
 ## Entrega do processo seletivo
 
