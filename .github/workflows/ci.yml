@@ -36,6 +36,11 @@ jobs:
           node-version: '22'
       - name: Instalar dependências
         run: npm install --no-audit --no-fund
+      - name: Salvar lockfile para instalação reproduzível
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-lock-gerado
+          path: package-lock.json
       - name: Testar regras de negócio
         run: npm test
       - name: Testar API com PostgreSQL real
