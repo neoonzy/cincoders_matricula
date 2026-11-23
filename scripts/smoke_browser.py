@@ -20,7 +20,7 @@ def ensure_no_overflow(page, where):
 
 def login(page, username):
     page.goto(BASE + '/login', wait_until='domcontentloaded')
-    page.get_by_role('heading', name='Entrar no sistema.').wait_for()
+    page.get_by_role('heading', name='Entrar no sistema').wait_for()
     page.locator('.cin-logo').wait_for()
     assert page.locator('.cin-logo').evaluate('(img) => img.complete && img.naturalWidth > 0'), 'Marca institucional não carregou'
     ensure_no_overflow(page, f'login {page.viewport_size["width"]}px')
@@ -48,6 +48,9 @@ with sync_playwright() as playwright:
     student.get_by_role('heading', name='Estruturas de Dados').first.wait_for()
     ensure_no_overflow(student, 'ofertas 360px')
     student.screenshot(path=str(IMAGES / 'aluno-ofertas-360.png'), full_page=True)
+    student.get_by_role('searchbox', name='Buscar').fill('Estruturas')
+    student.get_by_role('button', name='Limpar busca').click()
+    assert student.get_by_role('searchbox', name='Buscar').input_value() == ''
     student.get_by_role('button', name='Lista', exact=True).click()
     assert student.locator('.offer-list').evaluate("el => el.classList.contains('view-list')")
     student.get_by_role('button', name='Grade', exact=True).click()
@@ -67,8 +70,13 @@ with sync_playwright() as playwright:
     student.goto(BASE + '/aluno/matriculas')
     student.get_by_role('heading', name='Minhas matrículas', exact=True).wait_for()
     student.locator('.enrollment-item').filter(has_text='Estruturas de Dados').wait_for()
-    student.once('dialog', lambda dialog: dialog.accept())
     student.locator('.enrollment-item').filter(has_text='Estruturas de Dados').get_by_role('button', name='Cancelar').click()
+    dialog = student.get_by_role('dialog', name='Cancelar matrícula?')
+    dialog.wait_for()
+    dialog.get_by_role('button', name='Voltar').click()
+    student.locator('.enrollment-item').filter(has_text='Estruturas de Dados').wait_for()
+    student.locator('.enrollment-item').filter(has_text='Estruturas de Dados').get_by_role('button', name='Cancelar').click()
+    dialog.get_by_role('button', name='Cancelar matrícula', exact=True).click()
     student.get_by_text('Matrícula cancelada. A vaga foi liberada.').wait_for()
     student.get_by_role('heading', name='Nenhuma matrícula ativa').wait_for()
     ensure_no_overflow(student, 'matrículas 360px')
