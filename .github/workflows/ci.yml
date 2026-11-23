@@ -1,0 +1,90 @@
+name: Verificação do sistema de matrícula
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: matricula_test
+          POSTGRES_USER: matricula
+          POSTGRES_PASSWORD: matricula
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U matricula -d matricula_test"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 15
+    env:
+      TEST_DATABASE_URL: postgres://matricula:matricula@127.0.0.1:5432/matricula_test
+      SESSION_SECRET: chave-de-testes-github-com-pelo-menos-trinta-e-dois-caracteres
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Instalar dependências
+        run: npm ci --no-audit --no-fund
+      - name: Salvar lockfile para instalação reproduzível
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-lock-gerado
+          path: package-lock.json
+      - name: Testar regras de negócio
+        run: npm test
+      - name: Testar API com PostgreSQL real
+        run: npm run test:integration
+      - name: Compilar frontend
+        run: npm run build
+      - name: Preparar dados de demonstração para navegador
+        env:
+          DATABASE_URL: postgres://matricula:matricula@127.0.0.1:5432/matricula_test
+        run: |
+          npm run db:migrate
+          npm run db:seed
+      - name: Instalar navegador Playwright
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium
+      - name: Smoke E2E em 360px e 1280px
+        env:
+          DATABASE_URL: postgres://matricula:matricula@127.0.0.1:5432/matricula_test
+        run: |
+          npm run start -w @matricula/api > /tmp/matricula-api.log 2>&1 &
+          npm run dev:web > /tmp/matricula-web.log 2>&1 &
+          ready=0
+          for i in $(seq 1 25); do
+            if curl -fsS http://127.0.0.1:3333/api/health > /dev/null 2>&1 && curl -fsS http://127.0.0.1:5173/login > /dev/null 2>&1; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != "1" ]; then
+            echo 'Falha ao iniciar API ou frontend'
+            echo '=== API ==='
+            cat /tmp/matricula-api.log
+            echo '=== WEB ==='
+            cat /tmp/matricula-web.log
+            exit 1
+          fi
+          python3 scripts/smoke_browser.py
+      - name: Salvar screenshots do smoke
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-smoke
+          path: test-results/*.png
+          if-no-files-found: ignore
