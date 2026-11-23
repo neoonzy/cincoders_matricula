@@ -16,7 +16,7 @@ verify:
     SESSION_SECRET: chave-de-testes-do-ci-com-pelo-menos-trinta-e-dois-caracteres
     NODE_ENV: test
   script:
-    - npm install --no-audit --no-fund
+    - npm ci --no-audit --no-fund
     - node apps/api/scripts/wait-db.mjs
     - npm test
     - npm run test:integration

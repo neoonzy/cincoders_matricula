@@ -29,3 +29,9 @@ Data: **22 de novembro de 2026**.
 - O stylesheet foi reformatado com PostCSS, e seu parsing foi verificado sem erros.
 - O runner local permanece sem DNS para o registro npm (`EAI_AGAIN registry.npmjs.org`); não há `package-lock.json` gerado nesta execução.
 - A automação `.github/workflows/ci.yml` permite validar `npm test`, `npm run test:integration` e `npm run build` em CI conectado; só considerar aprovado após conferir as execuções.
+
+## Evidência adicional: GitHub Actions (runner hospedado)
+
+- Commit `099ac7d61aa3cbb96ce38fd016603c3d7c49aa32`: **CI aprovado** (`npm test` 16/16; `npm run test:integration` 16/16; `npm run build` sucesso), execução `45096194462`.
+- O lockfile npm foi gerado a partir da instalação real em outro job do mesmo workflow, coletado como artefato e incorporado para habilitar `npm ci`.
+- Teste E2E de navegador permanece pendente até execução específica.

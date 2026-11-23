@@ -4,7 +4,7 @@ Teste prático nº 5/2026 · Bolsa de Inovação Tecnológica em Engenharia de S
 
 Aplicação web acadêmica com dois perfis: **aluno** (ofertas, matrícula, cancelamento, progresso e planejamento) e **secretaria** (disciplinas, professores, turmas e capacidade). O projeto preserva as **13 regras obrigatórias do edital** e especifica dois adicionais voluntários: **pré-requisitos** e **planejamento de matrícula com projeção curricular**.
 
-> **Estado de verificação neste pacote:** código-fonte de API e interface implementados, testes unitários e de paginação executados com sucesso (16/16), sintaxe de `.mjs` e parsing de `.jsx` verificados. Integração com PostgreSQL, build Vite e smoke E2E estão preparados, mas **não foram executados neste ambiente**, pois faltam acesso ao registro npm, Docker/PostgreSQL e navegação Chromium local. Não interpretar o código como entrega validada de ponta a ponta antes dos passos de verificação abaixo.
+> **Estado de verificação neste pacote:** código-fonte de API e interface implementados, testes unitários e de paginação executados com sucesso (16/16), sintaxe de `.mjs` e parsing de `.jsx` verificados. Integração com PostgreSQL e build Vite foram aprovados no GitHub Actions com PostgreSQL 16; o smoke de navegador ainda não foi executado. Localmente, a rede npm e o servidor PostgreSQL continuam indisponíveis. Não interpretar o código como entrega validada de ponta a ponta antes dos passos de verificação abaixo.
 
 ## Requisitos locais
 
@@ -19,7 +19,7 @@ Aplicação web acadêmica com dois perfis: **aluno** (ofertas, matrícula, canc
 # a partir da raiz do repositório
 cp .env.example .env
 # Troque SESSION_SECRET no .env por uma chave aleatória, com pelo menos 32 caracteres.
-npm install --no-audit --no-fund
+npm ci --no-audit --no-fund
 
 docker compose up -d db
 npm run db:migrate
@@ -168,7 +168,7 @@ Consultar `docs/05-DECISOES-E-IMPLEMENTACAO.md` e `docs/06-DESIGN-SYSTEM.md`. Os
 - Os testes de integração agora cobrem também redução de capacidade **abaixo de 2 matrículas ativas**, unicidade de e-mail e autorização.
 - Foi adicionado workflow de verificação no GitHub, além do `.gitlab-ci.yml` exigido para o GitLab do CIn.
 
-**Limitações verificadas:** sem acesso ao registro npm neste container, o lockfile ainda não pôde ser gerado de modo confiável. O CI utiliza `npm install` até que `npm install --package-lock-only` seja executado em ambiente com acesso à rede; após commitar o lockfile, substituir por `npm ci`. Não declarar compilação, integração ou E2E aprovados sem os respectivos logs.
+**Verificação em runner remoto:** o lockfile foi gerado com npm 10 no GitHub Actions e passou a ser versionado. O GitLab e o GitHub CI usam `npm ci`; os testes com PostgreSQL e o build React passaram no runner remoto. A verificação visual E2E exige ainda execução própria no navegador.
 
 ## Entrega do processo seletivo
 
