@@ -1,7 +1,7 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { X } from 'lucide-react';
+import { X } from '../icons';
 
 export function useListParams() {
     const [params, setParams] = useSearchParams(), q = params.get('q') || '', page = Number.isInteger(Number(params.get('page') || 1)) && Number(params.get('page') || 1) > 0 ? Number(params.get('page') || 1) : 1, [input, setInput] = useState(q);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, CheckCircle2, Clock3, Plus, Trash2, TriangleAlert } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock3, Plus, Trash2, TriangleAlert } from '../icons';
 import { Badge, categoryName, Availability } from '../components';
 
 const blockerText = b => b.code === 'PRE_REQUISITO_PENDENTE' ? `Pré-requisito pendente: ${(b.pendentes || []).join(', ')}` : b.message;
